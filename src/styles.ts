@@ -21,7 +21,6 @@ export const ResultBox = styled(Box)(({ theme }) => ({
 export const TriviaBox = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(2),
   padding: theme.spacing(3),
-  backgroundColor: "#f8f9fa",
   borderRadius: 12,
   border: `2px solid ${theme.palette.primary.main}`,
 }));

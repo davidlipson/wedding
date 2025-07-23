@@ -211,13 +211,12 @@ function App() {
     <ThemeProvider theme={theme}>
       <Box
         sx={{
-          height: "100vh",
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
           padding: 2,
           paddingTop: 4,
-          background: "linear-gradient(145deg, #f5f1f8 0%, #ede4f0 100%)",
+          background: "#fef9ff",
         }}
       >
         <Box sx={{ width: "100%", maxWidth: "500px", margin: "0 auto" }}>
