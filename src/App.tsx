@@ -214,8 +214,9 @@ function App() {
           height: "100vh",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           padding: 2,
+          paddingTop: 4,
           background: "linear-gradient(145deg, #f5f1f8 0%, #ede4f0 100%)",
         }}
       >
