@@ -179,18 +179,31 @@ function App() {
 
   // Focus on name input when page loads
   useEffect(() => {
-    if (nameInputRef.current) {
-      nameInputRef.current.focus();
-    }
+    // Longer delay for mobile to ensure page is fully loaded
+    const timer = setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+        // For mobile, also trigger click to ensure virtual keyboard shows
+        nameInputRef.current.click();
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Focus on trivia input when trivia starts or question changes
   useEffect(() => {
     if (triviaStarted && triviaInputRef.current) {
-      // Small delay to ensure the input is rendered
-      setTimeout(() => {
-        triviaInputRef.current?.focus();
-      }, 100);
+      // Longer delay for mobile to ensure the input is rendered and ready
+      const timer = setTimeout(() => {
+        if (triviaInputRef.current) {
+          triviaInputRef.current.focus();
+          // For mobile, also trigger click to ensure virtual keyboard shows
+          triviaInputRef.current.click();
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
   }, [triviaStarted, currentQuestionIndex]);
 
@@ -244,6 +257,11 @@ function App() {
               label="Enter your full name"
               variant="outlined"
               fullWidth
+              autoFocus
+              inputProps={{
+                autoComplete: "name",
+                inputMode: "text",
+              }}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
@@ -450,10 +468,13 @@ function App() {
                     label="Your answer"
                     variant="outlined"
                     fullWidth
+                    autoFocus
                     multiline={currentQuestion.openEnded}
                     rows={currentQuestion.openEnded ? 3 : undefined}
                     inputProps={{
                       maxLength: currentQuestion.openEnded ? undefined : 50,
+                      inputMode: currentQuestion.openEnded ? "text" : "text",
+                      autoComplete: "off",
                     }}
                     sx={{
                       marginBottom: 2,
