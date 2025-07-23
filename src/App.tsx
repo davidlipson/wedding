@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   TextField,
   Typography,
@@ -29,6 +29,10 @@ function App() {
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [score, setScore] = useState(0);
+
+  // Refs for focus management
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const triviaInputRef = useRef<HTMLInputElement>(null);
 
   const handleNameInput = (inputName: string) => {
     setInputValue(inputName);
@@ -173,6 +177,23 @@ function App() {
 
   const correctAnswers = trivia.filter((q) => !q.openEnded).length;
 
+  // Focus on name input when page loads
+  useEffect(() => {
+    if (nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, []);
+
+  // Focus on trivia input when trivia starts or question changes
+  useEffect(() => {
+    if (triviaStarted && triviaInputRef.current) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        triviaInputRef.current?.focus();
+      }, 100);
+    }
+  }, [triviaStarted, currentQuestionIndex]);
+
   return (
     <ThemeProvider theme={theme}>
       <Box
@@ -217,6 +238,7 @@ function App() {
 
           <Box sx={{ width: "100%", marginBottom: 1 }}>
             <TextField
+              inputRef={nameInputRef}
               value={inputValue}
               onChange={(e) => handleNameInput(e.target.value)}
               label="Enter your full name"
@@ -422,6 +444,7 @@ function App() {
               {!showResult && (
                 <Box>
                   <TextField
+                    inputRef={triviaInputRef}
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
                     label="Your answer"
