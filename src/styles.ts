@@ -19,7 +19,6 @@ export const ResultBox = styled(Box)(({ theme }) => ({
 }));
 
 export const TriviaBox = styled(Box)(({ theme }) => ({
-  marginTop: theme.spacing(2),
   padding: theme.spacing(3),
   borderRadius: 12,
   border: `2px solid ${theme.palette.primary.main}`,
@@ -29,7 +28,7 @@ export const AnswerResultBox = styled(Box)<{ isCorrect?: boolean }>(
   ({ theme, isCorrect }) => ({
     marginTop: theme.spacing(2),
     padding: theme.spacing(2),
-    backgroundColor: isCorrect ? "#4caf50" : "#ff9800",
+    backgroundColor: isCorrect ? "#4caf50" : theme.palette.primary.main,
     color: "white",
     borderRadius: 8,
     textAlign: "center",

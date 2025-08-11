@@ -6,17 +6,61 @@ import {
   ThemeProvider,
   Button,
 } from "@mui/material";
+import { ExpandMore, ExpandLess } from "@mui/icons-material";
 import { weddingGuests, trivia } from "./constants";
 import { theme } from "./theme";
 import { ResultBox, TriviaBox, AnswerResultBox } from "./styles";
 import { analytics } from "./analytics";
+import TableLayout from "./components/TableLayout";
 
-// Convert the object to an array for the autocomplete
-const guestOptions = Object.keys(weddingGuests);
+// Create merged guest options that combine partners
+const createGuestOptions = () => {
+  const options: string[] = [];
+  const processedPartners = new Set<string>();
+
+  Object.entries(weddingGuests).forEach(([name, guest]) => {
+    // Skip if this guest is already processed as someone's partner
+    if (processedPartners.has(name)) {
+      return;
+    }
+
+    // Check if this guest has a partner
+    let partnerName = null;
+    if (guest.partner && weddingGuests[guest.partner]) {
+      partnerName = guest.partner;
+    } else {
+      // Check for reverse partner relationship
+      const reversePartner = Object.entries(weddingGuests).find(
+        ([, otherGuest]) => otherGuest.partner === name
+      );
+      if (reversePartner) {
+        partnerName = reversePartner[0];
+      }
+    }
+
+    if (partnerName) {
+      // Create combined option for partners using actual names
+      const combinedName = `${guest.name} & ${weddingGuests[partnerName].name}`;
+      options.push(combinedName);
+      processedPartners.add(name);
+      processedPartners.add(partnerName);
+    } else {
+      // Single guest option using actual name
+      options.push(guest.name);
+    }
+  });
+
+  return options;
+};
+
+const guestOptions = createGuestOptions();
 
 function App() {
   const [selectedGuest, setSelectedGuest] = useState<string | null>(null);
   const [tableNumber, setTableNumber] = useState<number | null>(null);
+  const [partnerTableNumber, setPartnerTableNumber] = useState<number | null>(
+    null
+  );
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
@@ -30,9 +74,16 @@ function App() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [score, setScore] = useState(0);
 
+  // Table layout visibility state
+  const [showTableLayout, setShowTableLayout] = useState(true);
+
   // Refs for focus management
   const nameInputRef = useRef<HTMLInputElement>(null);
   const triviaInputRef = useRef<HTMLInputElement>(null);
+
+  const sortedTables = [tableNumber, partnerTableNumber]
+    .filter(Boolean)
+    .sort((a, b) => (a || 0) - (b || 0));
 
   const handleNameInput = (inputName: string) => {
     setInputValue(inputName);
@@ -45,8 +96,8 @@ function App() {
     }
 
     // Find names that contain the input letters (case insensitive)
-    const matchingNames = guestOptions.filter((guest) =>
-      guest.toLowerCase().includes(inputName.toLowerCase())
+    const matchingNames = guestOptions.filter((option) =>
+      option.toLowerCase().includes(inputName.toLowerCase())
     );
 
     // Sort by similarity (exact matches first, then by length)
@@ -69,38 +120,132 @@ function App() {
       return a.length - b.length;
     });
 
-    // Show top 3 suggestions
-    setSuggestions(sortedMatches.slice(0, 3));
+    // Show top 5 suggestions
+    setSuggestions(sortedMatches.slice(0, 5));
 
     // Check for exact match
     const exactMatch = sortedMatches.find(
-      (guest) => guest.toLowerCase() === inputName.toLowerCase()
+      (option) => option.toLowerCase() === inputName.toLowerCase()
     );
 
     if (exactMatch) {
-      const tableNum = weddingGuests[exactMatch].seat.number;
-      setSelectedGuest(exactMatch);
-      setTableNumber(tableNum);
+      // Handle combined partner names
+      if (exactMatch.includes(" & ")) {
+        const [name1, name2] = exactMatch.split(" & ");
+        // Find guests by their actual names
+        const guest1 = Object.values(weddingGuests).find(
+          (g) => g.name === name1
+        );
+        const guest2 = Object.values(weddingGuests).find(
+          (g) => g.name === name2
+        );
 
-      // Track guest lookup
-      analytics.trackGuestLookup(exactMatch, tableNum);
-      analytics.identify(exactMatch);
+        if (guest1 && guest2) {
+          setSelectedGuest(exactMatch);
+          setTableNumber(guest1.seat.number);
+          setPartnerTableNumber(guest2.seat.number);
+
+          // Track guest lookup
+          analytics.trackGuestLookup(exactMatch, guest1.seat.number);
+          analytics.identify(exactMatch);
+        }
+      } else {
+        // Single guest - find by actual name
+        const guest = Object.values(weddingGuests).find(
+          (g) => g.name === exactMatch
+        );
+        if (guest) {
+          const tableNum = guest.seat.number;
+          setSelectedGuest(exactMatch);
+          setTableNumber(tableNum);
+
+          // Check if guest has a partner (bidirectional)
+          let partnerTableNum = null;
+          if (guest.partner) {
+            // Direct partner relationship - find partner by name
+            const partnerGuest = Object.values(weddingGuests).find(
+              (g) => g.name === guest.partner
+            );
+            if (partnerGuest) {
+              partnerTableNum = partnerGuest.seat.number;
+            }
+          } else {
+            // Check for reverse partner relationship
+            const reversePartner = Object.values(weddingGuests).find(
+              (otherGuest) => otherGuest.partner === guest.name
+            );
+            if (reversePartner) {
+              partnerTableNum = reversePartner.seat.number;
+            }
+          }
+          setPartnerTableNumber(partnerTableNum);
+
+          // Track guest lookup
+          analytics.trackGuestLookup(exactMatch, tableNum);
+          analytics.identify(exactMatch);
+        }
+      }
     } else {
       setSelectedGuest(null);
       setTableNumber(null);
+      setPartnerTableNumber(null);
     }
   };
 
-  const selectSuggestion = (guestName: string) => {
-    const tableNum = weddingGuests[guestName].seat.number;
-    setInputValue(guestName);
-    setSelectedGuest(guestName);
-    setTableNumber(tableNum);
-    setSuggestions([]);
+  const selectSuggestion = (option: string) => {
+    // Handle combined partner names
+    if (option.includes(" & ")) {
+      const [name1, name2] = option.split(" & ");
+      // Find guests by their actual names
+      const guest1 = Object.values(weddingGuests).find((g) => g.name === name1);
+      const guest2 = Object.values(weddingGuests).find((g) => g.name === name2);
 
-    // Track guest lookup
-    analytics.trackGuestLookup(guestName, tableNum);
-    analytics.identify(guestName);
+      if (guest1 && guest2) {
+        // For couples, show first names only in the input field
+        const displayName =
+          guest1.name.split(" ")[0] + " & " + guest2.name.split(" ")[0];
+        setInputValue(displayName);
+        setSelectedGuest(option); // Keep full name for functionality
+        setTableNumber(guest1.seat.number);
+        setPartnerTableNumber(guest2.seat.number);
+        setSuggestions([]);
+
+        // Track guest lookup
+        analytics.trackGuestLookup(option, guest1.seat.number);
+        analytics.identify(option);
+      }
+    } else {
+      // Single guest - find by actual name
+      const guest = Object.values(weddingGuests).find((g) => g.name === option);
+      if (guest) {
+        const tableNum = guest.seat.number;
+        setInputValue(option);
+        setSelectedGuest(option);
+        setTableNumber(tableNum);
+
+        // Check if guest has a partner (bidirectional)
+        let partnerTableNum = null;
+        if (guest.partner && weddingGuests[guest.partner]) {
+          // Direct partner relationship
+          partnerTableNum = weddingGuests[guest.partner].seat.number;
+        } else {
+          // Check for reverse partner relationship
+          const reversePartner = Object.entries(weddingGuests).find(
+            ([, otherGuest]) => otherGuest.partner === guest.name
+          );
+          if (reversePartner) {
+            partnerTableNum = reversePartner[1].seat.number;
+          }
+        }
+        setPartnerTableNumber(partnerTableNum);
+
+        setSuggestions([]);
+
+        // Track guest lookup
+        analytics.trackGuestLookup(option, tableNum);
+        analytics.identify(option);
+      }
+    }
   };
 
   const startTrivia = () => {
@@ -115,6 +260,7 @@ function App() {
     setUserAnswer("");
     setShowResult(false);
     setScore(0);
+    setShowTableLayout(true); // Show trivia when trivia starts
   };
 
   const checkAnswer = () => {
@@ -207,6 +353,16 @@ function App() {
     }
   }, [triviaStarted, currentQuestionIndex]);
 
+  const simplifiedCoupleName = (name: string) => {
+    if (name.includes(" & ")) {
+      // For couples, show first names only
+      const [name1, name2] = name.split(" & ");
+      return name1.split(" ")[0] + " & " + name2.split(" ")[0];
+    }
+    // For single names, show full name
+    return name;
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Box
@@ -216,7 +372,7 @@ function App() {
           justifyContent: "flex-start",
           padding: 2,
           paddingTop: 4,
-          background: "#fef9ff",
+          background: theme.palette.background.default,
         }}
       >
         <Box sx={{ width: "100%", maxWidth: "500px", margin: "0 auto" }}>
@@ -227,26 +383,11 @@ function App() {
             sx={{
               textAlign: "center",
               color: theme.palette.primary.main,
-              fontWeight: "bold",
-              marginBottom: 1,
-              background: "linear-gradient(45deg, #8b5a9f 30%, #f8bbd9 90%)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              marginBottom: 2,
+              fontSize: "2.5rem",
             }}
           >
             Welcome!
-          </Typography>
-
-          <Typography
-            variant="h6"
-            sx={{
-              textAlign: "center",
-              color: "text.secondary",
-              marginBottom: 3,
-            }}
-          >
-            Find your table assignment
           </Typography>
 
           <Box sx={{ width: "100%", marginBottom: 1 }}>
@@ -254,8 +395,8 @@ function App() {
               inputRef={nameInputRef}
               value={inputValue}
               onChange={(e) => handleNameInput(e.target.value)}
-              label="Enter your full name"
-              variant="outlined"
+              label="Enter your name to find your seat"
+              variant="standard"
               fullWidth
               autoFocus
               inputProps={{
@@ -263,12 +404,20 @@ function App() {
                 inputMode: "text",
               }}
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontSize: "1.1rem",
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.primary.main,
-                  },
+                "& .MuiInputBase-input": {
+                  color: theme.palette.primary.main,
+                },
+                "& .MuiInputLabel-root": {
+                  color: theme.palette.primary.light,
+                },
+                "& .MuiInput-underline:before": {
+                  borderBottomColor: theme.palette.primary.light,
+                },
+                "& .MuiInput-underline:after": {
+                  borderBottomColor: theme.palette.primary.main,
+                },
+                "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                  borderBottomColor: theme.palette.primary.main,
                 },
               }}
             />
@@ -278,8 +427,8 @@ function App() {
                 sx={{
                   marginTop: 1,
                   padding: 2,
-                  backgroundColor: "error.light",
-                  color: "error.contrastText",
+                  backgroundColor: theme.palette.primary.light,
+                  color: theme.palette.primary.dark,
                   borderRadius: 2,
                   textAlign: "center",
                 }}
@@ -307,24 +456,17 @@ function App() {
                     sx={{
                       backgroundColor: "white",
                       borderRadius: 2,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                       padding: 2,
+                      border: `1px solid ${theme.palette.primary.light}`,
                       cursor: "pointer",
                       transition: "all 0.2s ease",
-                      "&:hover": {
-                        backgroundColor: theme.palette.primary.light + "20",
-                        transform: "translateY(-1px)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
                     }}
                   >
                     <Typography
-                      sx={{
-                        fontSize: "1rem",
-                        fontWeight: "medium",
-                      }}
+                      variant="body1"
+                      color={theme.palette.primary.main}
                     >
-                      {suggestion}
+                      {simplifiedCoupleName(suggestion)}
                     </Typography>
                   </Box>
                 ))}
@@ -332,210 +474,482 @@ function App() {
             )}
           </Box>
 
-          {tableNumber && (
-            <ResultBox>
-              <Typography
-                variant="h4"
-                component="div"
-                sx={{ fontWeight: "bold" }}
-              >
-                Table {tableNumber}
-              </Typography>
-            </ResultBox>
-          )}
+          {tableNumber && selectedGuest && (
+            <>
+              <ResultBox>
+                <Typography variant="h4" component="div">
+                  {partnerTableNumber && partnerTableNumber !== tableNumber
+                    ? `Tables ${sortedTables.join(" and ")}`
+                    : `Table ${tableNumber}`}
+                </Typography>
 
-          {/* Trivia Section */}
-          {!triviaStarted &&
-            !triviaCompleted &&
-            !triviaOver &&
-            selectedGuest && (
-              <Box sx={{ textAlign: "center", marginTop: 2 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={startTrivia}
-                  sx={{
-                    borderRadius: 3,
-                    padding: "14px 40px",
-                    fontSize: "1.2rem",
-                    fontWeight: "bold",
-                    width: "100%",
-                    backgroundColor: "#4caf50",
-                  }}
-                >
-                  Play Trivia
-                </Button>
-              </Box>
-            )}
+                {/* Show table mates */}
+                <Box sx={{ marginTop: 2, paddingX: 2 }}>
+                  {/* Get all guests at the selected table(s) */}
+                  {(() => {
+                    const tableMates = new Set<string>();
 
-          {/* Trivia Completion Screen */}
-          {triviaCompleted && (
-            <TriviaBox>
-              <Typography
-                variant="body1"
-                sx={{
-                  marginBottom: 1,
-                  textAlign: "center",
-                  color: "text.primary",
-                }}
-              >
-                You got {score} / {correctAnswers} question
-                {score > 1 ? "s" : ""} correct!
-              </Typography>
-
-              <Typography
-                variant="body2"
-                sx={{
-                  marginBottom: 3,
-                  textAlign: "center",
-                  color: "text.secondary",
-                }}
-              >
-                {score > 3
-                  ? "Thanks for knowing us so well :)"
-                  : score > 1
-                  ? "Not bad!"
-                  : "That's a bummer..."}
-              </Typography>
-
-              <Typography
-                variant="body1"
-                sx={{
-                  marginBottom: 2,
-                  textAlign: "center",
-                  color: "text.secondary",
-                }}
-              >
-                {selectedGuest
-                  ? `Are you ${selectedGuest}?`
-                  : "Select your name to submit!"}
-              </Typography>
-              <Box sx={{ textAlign: "center" }}>
-                <Button
-                  variant="contained"
-                  onClick={submitScore}
-                  disabled={!selectedGuest}
-                  sx={{
-                    borderRadius: 2,
-                    padding: "12px 30px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Submit Your Score
-                </Button>
-              </Box>
-            </TriviaBox>
-          )}
-
-          {triviaStarted && currentQuestion && (
-            <TriviaBox>
-              {/* Progress Bar */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 1,
-                  marginBottom: 2,
-                }}
-              >
-                {Array.from({ length: trivia.length }, (_, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      width: "100%",
-                      height: 6,
-                      borderRadius: 2,
-                      backgroundColor:
-                        index <= currentQuestionIndex
-                          ? theme.palette.primary.main
-                          : "rgba(0, 0, 0, 0.1)",
-                      transition: "background-color 0.3s ease",
-                    }}
-                  />
-                ))}
-              </Box>
-
-              <Typography variant="body1" sx={{ marginBottom: 3 }}>
-                {currentQuestion.question}
-              </Typography>
-
-              {!showResult && (
-                <Box>
-                  <TextField
-                    inputRef={triviaInputRef}
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    label="Your answer"
-                    variant="outlined"
-                    fullWidth
-                    autoFocus
-                    multiline={currentQuestion.openEnded}
-                    rows={currentQuestion.openEnded ? 3 : undefined}
-                    inputProps={{
-                      maxLength: currentQuestion.openEnded ? undefined : 50,
-                      inputMode: currentQuestion.openEnded ? "text" : "text",
-                      autoComplete: "off",
-                    }}
-                    sx={{
-                      marginBottom: 2,
-                      "& .MuiInputBase-input": {
-                        wordWrap: "break-word",
-                        whiteSpace: currentQuestion.openEnded
-                          ? "pre-wrap"
-                          : "normal",
-                      },
-                    }}
-                    onKeyPress={(e) => {
-                      if (
-                        e.key === "Enter" &&
-                        (!currentQuestion.openEnded || !e.shiftKey)
-                      ) {
-                        e.preventDefault();
-                        checkAnswer();
+                    // Add guests from primary table
+                    Object.values(weddingGuests).forEach((guest) => {
+                      if (guest.seat.number === tableNumber) {
+                        tableMates.add(guest.name.split(" ")[0]);
                       }
-                    }}
-                  />
+                    });
+
+                    // Add guests from partner table if different
+                    if (
+                      partnerTableNumber &&
+                      partnerTableNumber !== tableNumber
+                    ) {
+                      Object.values(weddingGuests).forEach((guest) => {
+                        if (guest.seat.number === partnerTableNumber) {
+                          tableMates.add(guest.name.split(" ")[0]);
+                        }
+                      });
+                    }
+
+                    // Remove the selected guest and their partner from the list
+                    if (selectedGuest) {
+                      if (selectedGuest.includes(" & ")) {
+                        // For couples, remove both names
+                        const [name1, name2] = selectedGuest.split(" & ");
+                        tableMates.delete(name1.split(" ")[0]);
+                        tableMates.delete(name2.split(" ")[0]);
+                      } else {
+                        // For single guests, remove their name and their partner's name
+                        const guest = Object.values(weddingGuests).find(
+                          (g) => g.name === selectedGuest
+                        );
+                        if (guest) {
+                          tableMates.delete(guest.name.split(" ")[0]);
+
+                          // Remove partner's name if they have one
+                          if (guest.partner) {
+                            const partnerGuest = Object.values(
+                              weddingGuests
+                            ).find((g) => g.name === guest.partner);
+                            if (partnerGuest) {
+                              tableMates.delete(
+                                partnerGuest.name.split(" ")[0]
+                              );
+                            }
+                          } else {
+                            // Check for reverse partner relationship
+                            const reversePartner = Object.values(
+                              weddingGuests
+                            ).find((g) => g.partner === guest.name);
+                            if (reversePartner) {
+                              tableMates.delete(
+                                reversePartner.name.split(" ")[0]
+                              );
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    // Convert to array and merge couples
+                    const tableMatesArray = Array.from(tableMates);
+                    const mergedTableMates = new Set<string>();
+                    const processedPartners = new Set<string>();
+
+                    // Create a map of first names to full names for partner lookup
+                    const nameToFullName = new Map();
+                    Object.values(weddingGuests).forEach((guest) => {
+                      const firstName = guest.name.split(" ")[0];
+                      nameToFullName.set(firstName, guest.name);
+                    });
+
+                    // First, identify all couples at this table
+                    const couples = new Map<string, string>(); // firstName -> partnerFirstName
+                    const singlePeople = new Set<string>();
+
+                    tableMatesArray.forEach((firstName) => {
+                      const fullName = nameToFullName.get(firstName);
+                      const guest = Object.values(weddingGuests).find(
+                        (g) => g.name === fullName
+                      );
+
+                      if (guest && guest.partner) {
+                        const partnerGuest = Object.values(weddingGuests).find(
+                          (g) => g.name === guest.partner
+                        );
+                        if (
+                          partnerGuest &&
+                          tableMates.has(partnerGuest.name.split(" ")[0])
+                        ) {
+                          // Both partners are at this table
+                          const partnerFirstName =
+                            partnerGuest.name.split(" ")[0];
+                          couples.set(firstName, partnerFirstName);
+                        } else {
+                          // Partner not at this table
+                          singlePeople.add(firstName);
+                        }
+                      } else {
+                        // No partner, check if someone else's partner
+                        const isSomeonesPartner = Object.values(
+                          weddingGuests
+                        ).some((g) => g.partner === fullName);
+                        if (!isSomeonesPartner) {
+                          singlePeople.add(firstName);
+                        }
+                      }
+                    });
+
+                    // Create merged list
+                    couples.forEach((partnerFirstName, firstName) => {
+                      if (
+                        !processedPartners.has(firstName) &&
+                        !processedPartners.has(partnerFirstName)
+                      ) {
+                        mergedTableMates.add(
+                          `${firstName} & ${partnerFirstName}`
+                        );
+                        processedPartners.add(firstName);
+                        processedPartners.add(partnerFirstName);
+                      }
+                    });
+
+                    // Add single people
+                    singlePeople.forEach((firstName) => {
+                      if (!processedPartners.has(firstName)) {
+                        mergedTableMates.add(firstName);
+                      }
+                    });
+
+                    // Sort alphabetically
+                    const sortedTableMates =
+                      Array.from(mergedTableMates).sort();
+
+                    // Format the list with "and" before the last name
+                    let formattedList = "";
+                    if (sortedTableMates.length === 1) {
+                      formattedList = sortedTableMates[0];
+                    } else if (sortedTableMates.length === 2) {
+                      formattedList = `${sortedTableMates[0]} and ${sortedTableMates[1]}`;
+                    } else {
+                      const allButLast = sortedTableMates.slice(0, -1);
+                      const last =
+                        sortedTableMates[sortedTableMates.length - 1];
+                      formattedList = `${allButLast.join(", ")}, and ${last}`;
+                    }
+
+                    return (
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          color: "white",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        with {formattedList}
+                      </Typography>
+                    );
+                  })()}
+                </Box>
+              </ResultBox>
+
+              {/* Trivia Section */}
+              {!triviaStarted && !triviaCompleted && !triviaOver && (
+                <Box sx={{ textAlign: "center", marginTop: 2 }}>
                   <Button
-                    variant="contained"
-                    onClick={checkAnswer}
-                    disabled={!userAnswer.trim()}
-                    sx={{ borderRadius: 2, width: "100%", boxShadow: 0 }}
+                    variant="outlined"
+                    size="large"
+                    onClick={startTrivia}
+                    sx={{
+                      borderRadius: 3,
+                      border: `1px solid ${theme.palette.primary.main}`,
+                      padding: "14px 40px",
+                      fontSize: "1.2rem",
+                      width: "100%",
+                    }}
                   >
-                    Submit Answer
+                    Play Trivia
                   </Button>
                 </Box>
               )}
 
-              {showResult && (
-                <Box>
-                  {currentQuestion.openEnded ? (
-                    <AnswerResultBox isCorrect={true}>
-                      <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                        Thanks for playing!
-                      </Typography>
-                    </AnswerResultBox>
-                  ) : (
-                    <AnswerResultBox isCorrect={isCorrect}>
-                      <Typography variant="body1" fontWeight="bold">
-                        {isCorrect ? "Yup," : "Nope,"} {currentQuestion.answer}!
-                      </Typography>
-                    </AnswerResultBox>
-                  )}
-
-                  <Box sx={{ textAlign: "center", marginTop: 2 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={nextQuestion}
-                      sx={{ borderRadius: 2, width: "100%" }}
-                    >
-                      {currentQuestionIndex < trivia.length - 1
-                        ? "Next Question"
-                        : "Finish Trivia"}
-                    </Button>
-                  </Box>
+              {/* Trivia Toggle Button - show during trivia */}
+              {triviaStarted && (
+                <Box sx={{ textAlign: "center", marginTop: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => setShowTableLayout(!showTableLayout)}
+                    startIcon={
+                      showTableLayout ? (
+                        <ExpandLess
+                          key="expand-less"
+                          sx={{
+                            animation: "float 1s ease-in-out infinite",
+                            "@keyframes float": {
+                              "0%, 100%": {
+                                transform: "translateY(-2px)",
+                              },
+                              "50%": {
+                                transform: "translateY(-2px)",
+                              },
+                            },
+                          }}
+                        />
+                      ) : (
+                        <ExpandMore
+                          key="expand-more"
+                          sx={{
+                            animation: "float 2s ease-in-out infinite",
+                            "@keyframes float": {
+                              "0%, 100%": {
+                                transform: "translateY(-2px)",
+                              },
+                              "50%": {
+                                transform: "translateY(2px)",
+                              },
+                            },
+                          }}
+                        />
+                      )
+                    }
+                    sx={{
+                      marginBottom: showTableLayout ? 1 : 0,
+                      border: "none",
+                      padding: "8px 16px",
+                      fontSize: "0.9rem",
+                      color: theme.palette.primary.light,
+                      "&:hover": {
+                        borderColor: theme.palette.primary.dark,
+                        backgroundColor: theme.palette.primary.light + "10",
+                      },
+                    }}
+                  >
+                    {showTableLayout ? "Hide Trivia" : "Show Trivia"}
+                  </Button>
                 </Box>
               )}
-            </TriviaBox>
+
+              {/* Trivia Section with animation */}
+              <Box
+                sx={{
+                  overflow: "hidden",
+                  transition: "all 0.3s ease-in-out",
+                  maxHeight: showTableLayout ? "1000px" : "0px",
+                  opacity: showTableLayout ? 1 : 0,
+                  transform: showTableLayout
+                    ? "translateY(0)"
+                    : "translateY(-20px)",
+                }}
+              >
+                {/* Trivia Completion Screen */}
+                {triviaCompleted && (
+                  <TriviaBox>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        marginBottom: 1,
+                        textAlign: "center",
+                        color: "text.primary",
+                      }}
+                    >
+                      You got {score} / {correctAnswers} question
+                      {score > 1 ? "s" : ""} correct!
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        marginBottom: 3,
+                        textAlign: "center",
+                        color: "text.secondary",
+                      }}
+                    >
+                      {score > 3
+                        ? "Thanks for knowing us so well :)"
+                        : score > 1
+                        ? "Not bad!"
+                        : "That's a bummer..."}
+                    </Typography>
+
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        marginBottom: 2,
+                        textAlign: "center",
+                        color: "text.secondary",
+                      }}
+                    >
+                      {selectedGuest
+                        ? `Are you ${selectedGuest}?`
+                        : "Select your name to submit!"}
+                    </Typography>
+                    <Box sx={{ textAlign: "center" }}>
+                      <Button
+                        variant="contained"
+                        onClick={submitScore}
+                        disabled={!selectedGuest}
+                        sx={{
+                          borderRadius: 2,
+                          padding: "12px 30px",
+                        }}
+                      >
+                        Submit Your Score
+                      </Button>
+                    </Box>
+                  </TriviaBox>
+                )}
+
+                {triviaStarted && currentQuestion && (
+                  <TriviaBox>
+                    {/* Progress Bar */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 1,
+                        marginBottom: 2,
+                      }}
+                    >
+                      {Array.from({ length: trivia.length }, (_, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            width: "100%",
+                            height: 6,
+                            borderRadius: 2,
+                            backgroundColor:
+                              index <= currentQuestionIndex
+                                ? theme.palette.primary.main
+                                : "rgba(0, 0, 0, 0.05)",
+                            transition: "background-color 0.3s ease",
+                          }}
+                        />
+                      ))}
+                    </Box>
+
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        marginBottom: 2,
+                        color: theme.palette.primary.main,
+                      }}
+                    >
+                      {currentQuestion.question}
+                    </Typography>
+
+                    {!showResult && (
+                      <Box>
+                        <TextField
+                          inputRef={triviaInputRef}
+                          value={userAnswer}
+                          onChange={(e) => setUserAnswer(e.target.value)}
+                          label="Your answer"
+                          variant="standard"
+                          fullWidth
+                          autoFocus
+                          multiline={currentQuestion.openEnded}
+                          rows={currentQuestion.openEnded ? 3 : undefined}
+                          inputProps={{
+                            maxLength: currentQuestion.openEnded
+                              ? undefined
+                              : 50,
+                            inputMode: currentQuestion.openEnded
+                              ? "text"
+                              : "text",
+                            autoComplete: "off",
+                          }}
+                          sx={{
+                            marginBottom: 2,
+                            "& .MuiInputBase-input": {
+                              color: theme.palette.primary.main,
+                              wordWrap: "break-word",
+                              whiteSpace: currentQuestion.openEnded
+                                ? "pre-wrap"
+                                : "normal",
+                            },
+                            "& .MuiInputLabel-root": {
+                              color: theme.palette.primary.light,
+                            },
+                            "& .MuiInput-underline:before": {
+                              borderBottomColor: theme.palette.primary.light,
+                            },
+                            "& .MuiInput-underline:after": {
+                              borderBottomColor: theme.palette.primary.main,
+                            },
+                            "& .MuiInput-underline:hover:not(.Mui-disabled):before":
+                              {
+                                borderBottomColor: theme.palette.primary.main,
+                              },
+                          }}
+                          onKeyPress={(e) => {
+                            if (
+                              e.key === "Enter" &&
+                              (!currentQuestion.openEnded || !e.shiftKey)
+                            ) {
+                              e.preventDefault();
+                              checkAnswer();
+                            }
+                          }}
+                        />
+                        <Button
+                          variant="contained"
+                          onClick={checkAnswer}
+                          disabled={!userAnswer.trim()}
+                          sx={{
+                            borderRadius: 2,
+                            width: "100%",
+                            boxShadow: 0,
+                            "&:hover": {
+                              backgroundColor: theme.palette.primary.main,
+                            },
+                          }}
+                        >
+                          Submit Answer
+                        </Button>
+                      </Box>
+                    )}
+
+                    {showResult && (
+                      <Box>
+                        {currentQuestion.openEnded ? (
+                          <AnswerResultBox isCorrect={true}>
+                            <Typography
+                              variant="h6"
+                              sx={{ fontWeight: "bold" }}
+                            >
+                              Thanks for playing!
+                            </Typography>
+                          </AnswerResultBox>
+                        ) : (
+                          <AnswerResultBox isCorrect={isCorrect}>
+                            <Typography variant="body1" fontWeight="bold">
+                              {isCorrect ? "Yup," : "Nope,"}{" "}
+                              {currentQuestion.answer}!
+                            </Typography>
+                          </AnswerResultBox>
+                        )}
+
+                        <Box sx={{ textAlign: "center", marginTop: 2 }}>
+                          <Button
+                            variant="outlined"
+                            onClick={nextQuestion}
+                            sx={{ borderRadius: 2, width: "100%" }}
+                          >
+                            {currentQuestionIndex < trivia.length - 1
+                              ? "Next Question"
+                              : "Finish Trivia"}
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
+                  </TriviaBox>
+                )}
+              </Box>
+
+              {/* Table Layout - always visible */}
+              <TableLayout
+                tableNumber={tableNumber}
+                partnerTableNumber={partnerTableNumber || undefined}
+              />
+            </>
           )}
         </Box>
       </Box>

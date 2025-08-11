@@ -1,7 +1,24 @@
+@font-face {
+  font-family: "Providence Sans Regular";
+  src: url("/fonts/Providence Sans Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Providence Sans Regular";
+  src: url("/fonts/Providence Sans Bold.otf") format("opentype");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-family: "Providence Sans Regular", "Roboto", "Helvetica", "Arial",
+    sans-serif;
   line-height: 1.5;
-  font-weight: 400;
+  font-weight: 700;
 
   color: #333;
   background: #fef9ff;
