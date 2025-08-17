@@ -10,29 +10,6 @@ mixpanel.init(MIXPANEL_TOKEN, {
 });
 
 export const analytics = {
-  // Track score submission
-  trackScoreSubmission: (
-    guestName: string,
-    score: number,
-    totalQuestions: number
-  ) => {
-    mixpanel.track("Score Submitted", {
-      guest_name: guestName,
-      score: score,
-      total_questions: totalQuestions,
-      percentage: Math.round((score / totalQuestions) * 100),
-      timestamp: new Date().toISOString(),
-    });
-  },
-
-  // Track trivia start
-  trackTriviaStart: (guestName: string) => {
-    mixpanel.track("Trivia Started", {
-      guest_name: guestName,
-      timestamp: new Date().toISOString(),
-    });
-  },
-
   // Track guest lookup
   trackGuestLookup: (guestName: string, tableNumber: number) => {
     mixpanel.track("Guest Found", {

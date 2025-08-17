@@ -1,15 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  TextField,
-  Typography,
-  Box,
-  ThemeProvider,
-  Button,
-} from "@mui/material";
-import { ExpandMore, ExpandLess } from "@mui/icons-material";
-import { weddingGuests, trivia } from "./constants";
+import { TextField, Typography, Box, ThemeProvider } from "@mui/material";
+import { weddingGuests } from "./constants";
 import { theme } from "./theme";
-import { ResultBox, TriviaBox, AnswerResultBox } from "./styles";
+import { ResultBox } from "./styles";
 import { analytics } from "./analytics";
 import TableLayout from "./components/TableLayout";
 
@@ -64,22 +57,8 @@ function App() {
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  // Trivia game state
-  const [triviaStarted, setTriviaStarted] = useState(false);
-  const [triviaCompleted, setTriviaCompleted] = useState(false);
-  const [triviaOver, setTriviaOver] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswer, setUserAnswer] = useState("");
-  const [showResult, setShowResult] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [score, setScore] = useState(0);
-
-  // Table layout visibility state
-  const [showTableLayout, setShowTableLayout] = useState(true);
-
   // Refs for focus management
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const triviaInputRef = useRef<HTMLInputElement>(null);
 
   const sortedTables = [tableNumber, partnerTableNumber]
     .filter(Boolean)
@@ -248,80 +227,8 @@ function App() {
     }
   };
 
-  const startTrivia = () => {
-    // Track trivia start
-    if (selectedGuest) {
-      analytics.trackTriviaStart(selectedGuest);
-    }
-
-    setTriviaStarted(true);
-    setTriviaCompleted(false);
-    setCurrentQuestionIndex(0);
-    setUserAnswer("");
-    setShowResult(false);
-    setScore(0);
-    setShowTableLayout(true); // Show trivia when trivia starts
-  };
-
-  const checkAnswer = () => {
-    const currentQuestion = trivia[currentQuestionIndex];
-    let correct = false;
-
-    if (currentQuestion.openEnded) {
-      correct = true; // For open-ended, we'll show "Thanks for playing!"
-    } else if (currentQuestion.keywords) {
-      const normalizedUserAnswer = userAnswer.toLowerCase().replace(/\s+/g, "");
-      correct = currentQuestion.keywords.some((keyword) =>
-        normalizedUserAnswer.includes(keyword.toLowerCase().replace(/\s+/g, ""))
-      );
-    }
-
-    setIsCorrect(correct);
-    if (correct && !currentQuestion.openEnded) {
-      setScore(score + 1);
-    }
-
-    // If this is the last question, go directly to completion screen
-    if (currentQuestionIndex === trivia.length - 1) {
-      setTriviaCompleted(true);
-      setTriviaStarted(false);
-    } else {
-      setShowResult(true);
-    }
-  };
-
-  const nextQuestion = () => {
-    if (currentQuestionIndex < trivia.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setUserAnswer("");
-      setShowResult(false);
-    } else {
-      // End of trivia - show completion screen
-      setTriviaCompleted(true);
-      setTriviaStarted(false);
-    }
-  };
-
-  const submitScore = () => {
-    // Track the score submission
-    if (selectedGuest) {
-      analytics.trackScoreSubmission(selectedGuest, score, correctAnswers);
-    }
-
-    // Reset everything for a new game
-    setTriviaCompleted(false);
-    setTriviaOver(true);
-    setCurrentQuestionIndex(0);
-    setUserAnswer("");
-    setShowResult(false);
-    setScore(0);
-  };
-
-  const currentQuestion = trivia[currentQuestionIndex];
   const showNotFoundError =
     inputValue.trim() !== "" && suggestions.length === 0 && !selectedGuest;
-
-  const correctAnswers = trivia.filter((q) => !q.openEnded).length;
 
   // Focus on name input when page loads
   useEffect(() => {
@@ -336,22 +243,6 @@ function App() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  // Focus on trivia input when trivia starts or question changes
-  useEffect(() => {
-    if (triviaStarted && triviaInputRef.current) {
-      // Longer delay for mobile to ensure the input is rendered and ready
-      const timer = setTimeout(() => {
-        if (triviaInputRef.current) {
-          triviaInputRef.current.focus();
-          // For mobile, also trigger click to ensure virtual keyboard shows
-          triviaInputRef.current.click();
-        }
-      }, 300);
-
-      return () => clearTimeout(timer);
-    }
-  }, [triviaStarted, currentQuestionIndex]);
 
   const simplifiedCoupleName = (name: string) => {
     if (name.includes(" & ")) {
@@ -395,7 +286,7 @@ function App() {
               inputRef={nameInputRef}
               value={inputValue}
               onChange={(e) => handleNameInput(e.target.value)}
-              label="Enter your name to find your seat"
+              label={selectedGuest ? undefined : "Enter your name"}
               variant="standard"
               fullWidth
               autoFocus
@@ -406,9 +297,13 @@ function App() {
               sx={{
                 "& .MuiInputBase-input": {
                   color: theme.palette.primary.main,
+                  fontSize: "1.5rem",
+                  lineHeight: 1.2,
                 },
                 "& .MuiInputLabel-root": {
                   color: theme.palette.primary.light,
+                  fontSize: "1.5rem",
+                  lineHeight: 1.2,
                 },
                 "& .MuiInput-underline:before": {
                   borderBottomColor: theme.palette.primary.light,
@@ -484,7 +379,7 @@ function App() {
                 </Typography>
 
                 {/* Show table mates */}
-                <Box sx={{ marginTop: 2, paddingX: 2 }}>
+                <Box sx={{ marginTop: 1, paddingX: 2 }}>
                   {/* Get all guests at the selected table(s) */}
                   {(() => {
                     const tableMates = new Set<string>();
@@ -649,300 +544,6 @@ function App() {
                   })()}
                 </Box>
               </ResultBox>
-
-              {/* Trivia Section */}
-              {!triviaStarted && !triviaCompleted && !triviaOver && (
-                <Box sx={{ textAlign: "center", marginTop: 2 }}>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    onClick={startTrivia}
-                    sx={{
-                      borderRadius: 3,
-                      border: `1px solid ${theme.palette.primary.main}`,
-                      padding: "14px 40px",
-                      fontSize: "1.2rem",
-                      width: "100%",
-                    }}
-                  >
-                    Play Trivia
-                  </Button>
-                </Box>
-              )}
-
-              {/* Trivia Toggle Button - show during trivia */}
-              {triviaStarted && (
-                <Box sx={{ textAlign: "center", marginTop: 2 }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={() => setShowTableLayout(!showTableLayout)}
-                    startIcon={
-                      showTableLayout ? (
-                        <ExpandLess
-                          key="expand-less"
-                          sx={{
-                            animation: "float 1s ease-in-out infinite",
-                            "@keyframes float": {
-                              "0%, 100%": {
-                                transform: "translateY(-2px)",
-                              },
-                              "50%": {
-                                transform: "translateY(-2px)",
-                              },
-                            },
-                          }}
-                        />
-                      ) : (
-                        <ExpandMore
-                          key="expand-more"
-                          sx={{
-                            animation: "float 2s ease-in-out infinite",
-                            "@keyframes float": {
-                              "0%, 100%": {
-                                transform: "translateY(-2px)",
-                              },
-                              "50%": {
-                                transform: "translateY(2px)",
-                              },
-                            },
-                          }}
-                        />
-                      )
-                    }
-                    sx={{
-                      marginBottom: showTableLayout ? 1 : 0,
-                      border: "none",
-                      padding: "8px 16px",
-                      fontSize: "0.9rem",
-                      color: theme.palette.primary.light,
-                      "&:hover": {
-                        borderColor: theme.palette.primary.dark,
-                        backgroundColor: theme.palette.primary.light + "10",
-                      },
-                    }}
-                  >
-                    {showTableLayout ? "Hide Trivia" : "Show Trivia"}
-                  </Button>
-                </Box>
-              )}
-
-              {/* Trivia Section with animation */}
-              <Box
-                sx={{
-                  overflow: "hidden",
-                  transition: "all 0.3s ease-in-out",
-                  maxHeight: showTableLayout ? "1000px" : "0px",
-                  opacity: showTableLayout ? 1 : 0,
-                  transform: showTableLayout
-                    ? "translateY(0)"
-                    : "translateY(-20px)",
-                }}
-              >
-                {/* Trivia Completion Screen */}
-                {triviaCompleted && (
-                  <TriviaBox>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        marginBottom: 1,
-                        textAlign: "center",
-                        color: "text.primary",
-                      }}
-                    >
-                      You got {score} / {correctAnswers} question
-                      {score > 1 ? "s" : ""} correct!
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        marginBottom: 3,
-                        textAlign: "center",
-                        color: "text.secondary",
-                      }}
-                    >
-                      {score > 3
-                        ? "Thanks for knowing us so well :)"
-                        : score > 1
-                        ? "Not bad!"
-                        : "That's a bummer..."}
-                    </Typography>
-
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        marginBottom: 2,
-                        textAlign: "center",
-                        color: "text.secondary",
-                      }}
-                    >
-                      {selectedGuest
-                        ? `Are you ${selectedGuest}?`
-                        : "Select your name to submit!"}
-                    </Typography>
-                    <Box sx={{ textAlign: "center" }}>
-                      <Button
-                        variant="contained"
-                        onClick={submitScore}
-                        disabled={!selectedGuest}
-                        sx={{
-                          borderRadius: 2,
-                          padding: "12px 30px",
-                        }}
-                      >
-                        Submit Your Score
-                      </Button>
-                    </Box>
-                  </TriviaBox>
-                )}
-
-                {triviaStarted && currentQuestion && (
-                  <TriviaBox>
-                    {/* Progress Bar */}
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        gap: 1,
-                        marginBottom: 2,
-                      }}
-                    >
-                      {Array.from({ length: trivia.length }, (_, index) => (
-                        <Box
-                          key={index}
-                          sx={{
-                            width: "100%",
-                            height: 6,
-                            borderRadius: 2,
-                            backgroundColor:
-                              index <= currentQuestionIndex
-                                ? theme.palette.primary.main
-                                : "rgba(0, 0, 0, 0.05)",
-                            transition: "background-color 0.3s ease",
-                          }}
-                        />
-                      ))}
-                    </Box>
-
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        marginBottom: 2,
-                        color: theme.palette.primary.main,
-                      }}
-                    >
-                      {currentQuestion.question}
-                    </Typography>
-
-                    {!showResult && (
-                      <Box>
-                        <TextField
-                          inputRef={triviaInputRef}
-                          value={userAnswer}
-                          onChange={(e) => setUserAnswer(e.target.value)}
-                          label="Your answer"
-                          variant="standard"
-                          fullWidth
-                          autoFocus
-                          multiline={currentQuestion.openEnded}
-                          rows={currentQuestion.openEnded ? 3 : undefined}
-                          inputProps={{
-                            maxLength: currentQuestion.openEnded
-                              ? undefined
-                              : 50,
-                            inputMode: currentQuestion.openEnded
-                              ? "text"
-                              : "text",
-                            autoComplete: "off",
-                          }}
-                          sx={{
-                            marginBottom: 2,
-                            "& .MuiInputBase-input": {
-                              color: theme.palette.primary.main,
-                              wordWrap: "break-word",
-                              whiteSpace: currentQuestion.openEnded
-                                ? "pre-wrap"
-                                : "normal",
-                            },
-                            "& .MuiInputLabel-root": {
-                              color: theme.palette.primary.light,
-                            },
-                            "& .MuiInput-underline:before": {
-                              borderBottomColor: theme.palette.primary.light,
-                            },
-                            "& .MuiInput-underline:after": {
-                              borderBottomColor: theme.palette.primary.main,
-                            },
-                            "& .MuiInput-underline:hover:not(.Mui-disabled):before":
-                              {
-                                borderBottomColor: theme.palette.primary.main,
-                              },
-                          }}
-                          onKeyPress={(e) => {
-                            if (
-                              e.key === "Enter" &&
-                              (!currentQuestion.openEnded || !e.shiftKey)
-                            ) {
-                              e.preventDefault();
-                              checkAnswer();
-                            }
-                          }}
-                        />
-                        <Button
-                          variant="contained"
-                          onClick={checkAnswer}
-                          disabled={!userAnswer.trim()}
-                          sx={{
-                            borderRadius: 2,
-                            width: "100%",
-                            boxShadow: 0,
-                            "&:hover": {
-                              backgroundColor: theme.palette.primary.main,
-                            },
-                          }}
-                        >
-                          Submit Answer
-                        </Button>
-                      </Box>
-                    )}
-
-                    {showResult && (
-                      <Box>
-                        {currentQuestion.openEnded ? (
-                          <AnswerResultBox isCorrect={true}>
-                            <Typography
-                              variant="h6"
-                              sx={{ fontWeight: "bold" }}
-                            >
-                              Thanks for playing!
-                            </Typography>
-                          </AnswerResultBox>
-                        ) : (
-                          <AnswerResultBox isCorrect={isCorrect}>
-                            <Typography variant="body1" fontWeight="bold">
-                              {isCorrect ? "Yup," : "Nope,"}{" "}
-                              {currentQuestion.answer}!
-                            </Typography>
-                          </AnswerResultBox>
-                        )}
-
-                        <Box sx={{ textAlign: "center", marginTop: 2 }}>
-                          <Button
-                            variant="outlined"
-                            onClick={nextQuestion}
-                            sx={{ borderRadius: 2, width: "100%" }}
-                          >
-                            {currentQuestionIndex < trivia.length - 1
-                              ? "Next Question"
-                              : "Finish Trivia"}
-                          </Button>
-                        </Box>
-                      </Box>
-                    )}
-                  </TriviaBox>
-                )}
-              </Box>
 
               {/* Table Layout - always visible */}
               <TableLayout
