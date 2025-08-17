@@ -134,7 +134,7 @@ const TableLayout = ({ tableNumber, partnerTableNumber }: TableLayoutProps) => {
     <Box
       sx={{
         width: "100%",
-        paddingY: 3,
+        paddingTop: 3,
       }}
     >
       {/* Main table layout */}
@@ -150,7 +150,7 @@ const TableLayout = ({ tableNumber, partnerTableNumber }: TableLayoutProps) => {
       </Stack>
 
       {/* Vendor tables */}
-      <Box sx={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+      <Box sx={{ marginTop: 3, display: "flex", justifyContent: "center" }}>
         <Stack direction="row" spacing={8} alignItems="center">
           {vendorTables.map((tableNum) =>
             renderTable(

@@ -254,6 +254,17 @@ function App() {
     return name;
   };
 
+  const suggestionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (suggestionRef.current) {
+      suggestionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [tableNumber, partnerTableNumber]);
+
   return (
     <ThemeProvider theme={theme}>
       <Box
@@ -270,12 +281,10 @@ function App() {
           <Typography
             variant="h4"
             component="h1"
-            gutterBottom
             sx={{
               textAlign: "center",
               color: theme.palette.primary.main,
               fontSize: "2.5rem",
-              lineHeight: 0.5,
             }}
           >
             Welcome!
@@ -383,7 +392,7 @@ function App() {
           </Box>
 
           {tableNumber && selectedGuest && (
-            <>
+            <Box ref={suggestionRef} paddingTop={0.5}>
               <ResultBox>
                 <Typography variant="h4" component="div">
                   {partnerTableNumber && partnerTableNumber !== tableNumber
@@ -563,7 +572,7 @@ function App() {
                 tableNumber={tableNumber}
                 partnerTableNumber={partnerTableNumber || undefined}
               />
-            </>
+            </Box>
           )}
         </Box>
       </Box>
