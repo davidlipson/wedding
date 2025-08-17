@@ -274,11 +274,24 @@ function App() {
             sx={{
               textAlign: "center",
               color: theme.palette.primary.main,
-              marginBottom: 2,
               fontSize: "2.5rem",
+              lineHeight: 0.5,
             }}
           >
             Welcome!
+          </Typography>
+
+          <Typography
+            variant="h6"
+            component="h2"
+            sx={{
+              textAlign: "center",
+              color: theme.palette.primary.main,
+              marginBottom: 3,
+              fontSize: "1.2rem",
+            }}
+          >
+            Find your seat
           </Typography>
 
           <Box sx={{ width: "100%", marginBottom: 1 }}>
