@@ -853,7 +853,6 @@ export const weddingGuests: Record<string, Guest> = {
   Shell: {
     name: "Shell",
     seat: { number: 13 },
-    partner: "Rachel_Isakow",
   },
   Lawrie: {
     name: "Lawrie",
@@ -868,7 +867,6 @@ export const weddingGuests: Record<string, Guest> = {
   Rachel_Isakow: {
     name: "Rachel Isakow",
     seat: { number: 13 },
-    partner: "Shell",
   },
   Brian_Hanessian: {
     name: "Brian Hanessian",
