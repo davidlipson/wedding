@@ -21,12 +21,12 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Jeremy: {
     name: "Jeremy",
-    seat: { number: 1 },
+    seat: { number: 2 },
     partner: "Michelle",
   },
   Michelle: {
     name: "Michelle",
-    seat: { number: 1 },
+    seat: { number: 2 },
     partner: "Jeremy",
   },
   Travis: {
@@ -41,7 +41,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Cole: {
     name: "Cole",
-    seat: { number: 2 },
+    seat: { number: 3 },
     partner: "Chloe",
   },
   Elie: {
@@ -51,7 +51,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Kirin: {
     name: "Kirin",
-    seat: { number: 2 },
+    seat: { number: 1 },
     partner: "Alex_Williamson",
   },
   Rachel: {
@@ -79,12 +79,12 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Sarah_Collins: {
     name: "Sarah Collins",
-    seat: { number: 3 },
+    seat: { number: 4 },
     partner: "Yan",
   },
   Stephanie_Valentine: {
     name: "Stephanie Valentine",
-    seat: { number: 3 },
+    seat: { number: 4 },
     partner: "Mark_Valentine",
   },
   Victoria: {
@@ -93,12 +93,12 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Carolyn_Collins: {
     name: "Carolyn Collins",
-    seat: { number: 4 },
+    seat: { number: 5 },
     partner: "Billy_Collins",
   },
   Celia: {
     name: "Celia",
-    seat: { number: 4 },
+    seat: { number: 3 },
   },
   Deeter: {
     name: "Deeter",
@@ -111,7 +111,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Shelley_Fingerhut: {
     name: "Shelley Fingerhut",
-    seat: { number: 4 },
+    seat: { number: 5 },
     partner: "Marty_Fingerhut",
   },
   Yan: {
@@ -121,7 +121,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Billy_Collins: {
     name: "Billy Collins",
-    seat: { number: 5 },
+    seat: { number: 4 },
     partner: "Carolyn_Collins",
   },
   Cindy_Wise: {
@@ -131,12 +131,12 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Jennifer: {
     name: "Jennifer",
-    seat: { number: 5 },
+    seat: { number: 6 },
     partner: "Ross",
   },
   Jerry: {
     name: "Jerry",
-    seat: { number: 5 },
+    seat: { number: 6 },
     partner: "Cindy_Wise",
   },
   Marty_Fingerhut: {
@@ -155,7 +155,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Jonathan_Wise: {
     name: "Jonathan Wise",
-    seat: { number: 6 },
+    seat: { number: 5 },
   },
   Jordan: {
     name: "Jordan",
@@ -315,6 +315,10 @@ export const weddingGuests: Record<string, Guest> = {
     name: "Yoav",
     seat: { number: 11 },
   },
+  Aviva_Penn: {
+    name: "Aviva Penn",
+    seat: { number: 11 },
+  },
   Dotan: {
     name: "Dotan",
     seat: { number: 12 },
@@ -345,12 +349,12 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Cory: {
     name: "Cory",
-    seat: { number: 13 },
+    seat: { number: 1 },
     partner: "Naomi_E",
   },
   Joe: {
     name: "Joe",
-    seat: { number: 13 },
+    seat: { number: 14 },
     partner: "Ann",
   },
   "Karen R": {
@@ -359,7 +363,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Naomi_E: {
     name: "Naomi E",
-    seat: { number: 13 },
+    seat: { number: 1 },
     partner: "Cory",
   },
   Shaina: {
@@ -393,7 +397,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Stephen: {
     name: "Stephen",
-    seat: { number: 14 },
+    seat: { number: 15 },
   },
   Alanna_Wronzberg: {
     name: "Alanna Wronzberg",
@@ -558,7 +562,6 @@ export const weddingGuests: Record<string, Guest> = {
   Jon_Catanus: {
     name: "Jon Catanus",
     seat: { number: 21 },
-    partner: "Rachel_Chiong",
   },
   Pat: {
     name: "Pat",
@@ -590,10 +593,9 @@ export const weddingGuests: Record<string, Guest> = {
     seat: { number: 22 },
     partner: "Sarah_Sawaya",
   },
-  Rachel_Chiong: {
-    name: "Rachel Chiong",
-    seat: { number: 22 },
-    partner: "Jon_Catanus",
+  Dani: {
+    name: "Dani",
+    seat: { number: 13 },
   },
   Romi: {
     name: "Romi",
@@ -607,7 +609,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Carly: {
     name: "Carly",
-    seat: { number: 23 },
+    seat: { number: 22 },
     partner: "Emily",
   },
   Emily: {
@@ -622,7 +624,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Marty_Vishnepolsky: {
     name: "Marty Vishnepolsky",
-    seat: { number: 23 },
+    seat: { number: 24 },
   },
   Rick: {
     name: "Rick",
@@ -636,7 +638,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Alyssa: {
     name: "Alyssa",
-    seat: { number: 24 },
+    seat: { number: 23 },
     partner: "Hannie",
   },
   Elana: {
@@ -646,7 +648,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Hannie: {
     name: "Hannie",
-    seat: { number: 24 },
+    seat: { number: 23 },
     partner: "Alyssa",
   },
   Jumana: {
@@ -848,10 +850,10 @@ export const weddingGuests: Record<string, Guest> = {
     seat: { number: 31 },
     partner: "Lawrie",
   },
-  Gary: {
-    name: "Gary",
-    seat: { number: 31 },
-    partner: "Rosemary",
+  Shell: {
+    name: "Shell",
+    seat: { number: 13 },
+    partner: "Rachel_Isakow",
   },
   Lawrie: {
     name: "Lawrie",
@@ -860,13 +862,13 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Lisa_Solomon: {
     name: "Lisa Solomon",
-    seat: { number: 31 },
+    seat: { number: 32 },
     partner: "Cary",
   },
-  Rosemary: {
-    name: "Rosemary",
-    seat: { number: 31 },
-    partner: "Gary",
+  Rachel_Isakow: {
+    name: "Rachel Isakow",
+    seat: { number: 13 },
+    partner: "Shell",
   },
   Brian_Hanessian: {
     name: "Brian Hanessian",
@@ -875,11 +877,11 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Carole: {
     name: "Carole",
-    seat: { number: 32 },
+    seat: { number: 31 },
   },
   Jack_Frieberg: {
     name: "Jack Frieberg",
-    seat: { number: 32 },
+    seat: { number: 31 },
     partner: "Sandra_Herlick",
   },
   Linda: {
@@ -893,7 +895,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Sandra_Herlick: {
     name: "Sandra Herlick",
-    seat: { number: 32 },
+    seat: { number: 31 },
     partner: "Jack_Frieberg",
   },
   Elliot: {
@@ -908,7 +910,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Jason: {
     name: "Jason",
-    seat: { number: 33 },
+    seat: { number: 32 },
     partner: "Karen_Weinstein",
   },
   Julie: {
@@ -918,7 +920,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Karen_Weinstein: {
     name: "Karen Weinstein",
-    seat: { number: 33 },
+    seat: { number: 32 },
     partner: "Jason",
   },
   Perri: {
@@ -933,7 +935,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Janice_Margolis: {
     name: "Janice Margolis",
-    seat: { number: 34 },
+    seat: { number: 33 },
     partner: "Simon_Margolis",
   },
   Keith: {
@@ -943,7 +945,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Simon_Margolis: {
     name: "Simon Margolis",
-    seat: { number: 34 },
+    seat: { number: 33 },
     partner: "Janice_Margolis",
   },
   Susan_Fromer: {
@@ -963,7 +965,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Heather: {
     name: "Heather",
-    seat: { number: 35 },
+    seat: { number: 34 },
     partner: "Todd",
   },
   Marla: {
@@ -983,7 +985,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Todd: {
     name: "Todd",
-    seat: { number: 35 },
+    seat: { number: 34 },
     partner: "Heather",
   },
   Debra_Warsh: {
@@ -993,7 +995,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Jon_Hussman: {
     name: "Jon Hussman",
-    seat: { number: 36 },
+    seat: { number: 35 },
     partner: "Sharon",
   },
   Laura: {
@@ -1008,7 +1010,7 @@ export const weddingGuests: Record<string, Guest> = {
   },
   Sharon: {
     name: "Sharon",
-    seat: { number: 36 },
+    seat: { number: 35 },
     partner: "Jon_Hussman",
   },
   Steven_Warsh: {
